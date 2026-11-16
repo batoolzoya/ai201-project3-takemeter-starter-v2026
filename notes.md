@@ -158,19 +158,81 @@ situation, even if a question is included.
 
 \## Stress test (Milestone 2)
 
-Asked AI for 8 posts on my label boundaries and labelled them myself:
+Asked AI to write 8 posts sitting on my label boundaries, then labelled
 
-trip\_report, advice, rant, question, advice, rant, trip\_report, trip\_report.
-
-All 8 fit one label under the definitions. Closest call: #7 (a trip
-
-update that asks "is it normal for feet to hurt this much?"), which I
-
-called trip\_report because the question is a side note to the trip.
-
-Definitions kept as written.
+them myself using only my definitions.
 
 
+
+1\. "Just got back from Lisbon. Honestly the trams were a nightmare, packed
+
+&#x20;  every single time and two of them broke down while we were on them.
+
+&#x20;  Food was great though and the views from Alfama made up for it."
+
+&#x20;  -> trip\_report
+
+2\. "Spent 3 weeks in Vietnam last spring. If you go, skip Ha Long Bay day
+
+&#x20;  tours and do the overnight Lan Ha cruise instead, it's quieter and about
+
+&#x20;  the same price."
+
+&#x20;  -> advice
+
+3\. "Why does every airline now charge for seat selection?? I paid $400 for
+
+&#x20;  a ticket and they want another $45 so I can sit next to my own kid. Is
+
+&#x20;  there any airline left that doesn't do this?"
+
+&#x20;  -> rant
+
+4\. "I'm in Rome right now and it's my first time in Europe. Pickpocketed on
+
+&#x20;  the metro this morning. Anyone know if the police station near Termini
+
+&#x20;  handles tourist reports in English?"
+
+&#x20;  -> question
+
+5\. "Have you tried booking directly with the hotel instead? I did that in
+
+&#x20;  Porto last year and they upgraded me for free."
+
+&#x20;  -> advice
+
+6\. "Hostels in Amsterdam are getting ridiculous. EUR 70 for a bunk in a
+
+&#x20;  12-bed dorm. I remember when it was EUR 25. Travel used to be for
+
+&#x20;  everyone."
+
+&#x20;  -> rant
+
+7\. "Day 4 in Japan. Kyoto was beautiful but I underestimated how much
+
+&#x20;  walking there is. Is it normal for feet to hurt this much? Thinking of
+
+&#x20;  skipping Nara tomorrow."
+
+&#x20;  -> trip\_report
+
+8\. "Took the night train from Vienna to Venice. Would I do it again?
+
+&#x20;  Absolutely, but book a private compartment. The 6-berth couchette was
+
+&#x20;  miserable."
+
+&#x20;  -> trip\_report
+
+
+
+Result: all 8 fit one label under the definitions. Closest call: #7,
+
+which asks a question, but I called it trip\_report because the question
+
+is a side note to the trip update. Definitions kept as written.
 
 
 
