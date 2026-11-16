@@ -100,3 +100,77 @@ advice only if it is aimed at someone else's plans.
 
 &#x20;  is describing the writer's own trip. Chose trip\_report. The rule held.
 
+
+
+\## Label definitions (Milestone 2)
+
+(Wording drafted with AI from my purpose rule and my own calls; edited by me.)
+
+
+
+question: The writer's main purpose is to get information, help or opinions from others.
+
+&#x20; e.g. "Is booking two one-way flights instead of round trip asking for trouble?..."
+
+&#x20; e.g. "How to travel with pet - Connecting flights with different airlines..."
+
+
+
+advice: The writer's main purpose is to help with someone else's plans, decision or
+
+question: recommending, warning, correcting, or sharing an opinion or habit for them to weigh.
+
+&#x20; e.g. "BGY is not on Milan, it is in Bergamo..."
+
+&#x20; e.g. "sorry your NYC trip got wrecked... Under the US DOT refund rule..."
+
+
+
+trip\_report: The writer's main purpose is to describe a trip or place they experienced
+
+themselves, even if tips slip in.
+
+&#x20; e.g. "A day in Verona. Yesterday I finally had the opportunity to visit Verona..."
+
+&#x20; e.g. "Nice shots! I was also in South Korea for two weeks recently..."
+
+
+
+rant: The writer's main purpose is to vent frustration about a travel experience or
+
+situation, even if a question is included.
+
+&#x20; e.g. "Left Marseille at 3am Friday And now stuck In Miami at 3am..."
+
+&#x20; e.g. "Sadly, charging for tap water is becoming more and more common..."
+
+
+
+\## Tie-breaker tests
+
+\- rant vs question: delete the question. If what's left is mainly complaining, it's a
+
+&#x20; rant. If the complaining is background for a specific request, it's a question.
+
+\- rant vs trip\_report: is the frustration the point of the post, or one part of a trip story?
+
+
+
+\## Stress test (Milestone 2)
+
+Asked AI for 8 posts on my label boundaries and labelled them myself:
+
+trip\_report, advice, rant, question, advice, rant, trip\_report, trip\_report.
+
+All 8 fit one label under the definitions. Closest call: #7 (a trip
+
+update that asks "is it normal for feet to hurt this much?"), which I
+
+called trip\_report because the question is a side note to the trip.
+
+Definitions kept as written.
+
+
+
+
+
