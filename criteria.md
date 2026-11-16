@@ -53,61 +53,41 @@ whether you hit them:
 
 ## 1.
 
-<!-- Your criterion. It must name a number. -->
+Overall accuracy on the held-out test set is at least 0.80 on all three seeds.
 
-
-
-**Why this target:**
-
-
+**Why this target:** My labels are based on the writer's purpose, which I expect to be clear in at least 8 out of 10 posts. The other 20% are edge cases like the ones in my notes, such as rants that ask questions or trip reports full of tips.
 
 ---
 
 ## 2.
 
-<!-- Your criterion. -->
+Every label (question, advice, trip_report, rant) has an F1 of at least 0.7 on all three seeds, except rant, which needs at least 0.50.
 
-
-
-**Why this target:**
-
-
+**Why this target:** Close to my overall target for the three bigger labels. Rant is looser because it is my smallest label (about 12% of my data), so only a few rants land in each test split and its score will jump around.
 
 ---
 
 ## 3.
 
-<!-- Your criterion. -->
+The trained model's accuracy is at least 20 points higher than the untrained baseline's accuracy on the same test posts.
 
-
-
-**Why this target:**
-
-
+**Why this target:** The trained model got to practice on my own labelled posts and my own choices. If it isn't at least 20 points better than a model that only read my definitions, the training didn't add much.
 
 ---
 
 ## 4.
 
-<!-- Your criterion. -->
+My labels agree with the staff labels on at least 70% of the 30 staff posts.
 
-
-
-**Why this target:**
-
-
+**Why this target:** I expect the staff's written rules to be clear enough to arrive at consistent results at least 7/10 times.
 
 ---
 
 ## 5.
 
-<!-- Your criterion. -->
+In labels.csv, no label is more than 50% of the rows and no label is less than 10%.
 
-
-
-**Why this target:**
-
-
+**Why this target:** Currently, my biggest (advice) label is at 41% and smallest (rant) at 12%. I do not wish for the disparity to grow as that would adversely impact the training by neglecting smaller labels.
 
 ---
 
