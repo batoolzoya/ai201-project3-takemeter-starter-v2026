@@ -39,140 +39,153 @@
 
 ## What This Does
 
-<!-- Your community, and what your classifier sorts posts into. Three or four
-     sentences. -->
-
-
+TakeMeter sorts posts and comments from **r/travel**, a large public subreddit where people plan trips, share trips and complain about travel. Each item gets exactly one of four labels based on the writer's **main purpose**: `question` (asking for help), `advice` (helping someone else), `trip_report` (describing their own trip) or `rant` (venting frustration). The model sees each item on its own text alone, without the thread it came from.
 
 ---
 
 ## Label Taxonomy
 
-<!-- Each label: a one-sentence definition and two real examples from your
-     reading. Then your decision rule for the hardest boundary.
+**General rule for every label:** label by the writer's main purpose, judged from the text alone, not by surface features. A question mark doesn't make a question, the word "rant" doesn't make a rant, and a sad tone doesn't make a rant.
 
-     The decision rule is worth a point on its own and it's the thing most
-     people leave out. Every taxonomy has a hardest boundary. Name yours. -->
+### `question`
 
-### `label_one`
-
-**Definition:**
+**Definition:** The writer's main purpose is to get information, help or opinions from others.
 
 **Example 1:**
->
+> Is booking two one-way flights instead of round trip asking for trouble? I'm looking at a US to Europe trip and somehow two separate one-way tickets are giving me more options than searching round trip...
 
 **Example 2:**
->
+> How to travel with pet - Connecting flights with different airlines. Does anyone know how I can ensure that my pet will be able to travel with me on my WHOLE trip?...
 
-### `label_two`
+### `advice`
 
-**Definition:**
+**Definition:** The writer's main purpose is to help with someone else's plans, decision or question: recommending, warning, correcting, or sharing an opinion or habit for them to weigh.
 
 **Example 1:**
->
+> BGY is not on Milan, it is in Bergamo which is a completly different town „far" away. if you want to save time BGY is no option...
 
 **Example 2:**
->
+> sorry your NYC trip got wrecked... Under the US DOT refund rule that's been in force since late 2024 if the airline cancels your flight and you don't accept the rebooking you're owed your money back in cash...
+
+### `trip_report`
+
+**Definition:** The writer's main purpose is to describe a trip or place they experienced themselves, even if tips slip in.
+
+**Example 1:**
+> A day in Verona. Yesterday I finally had the opportunity to visit Verona, which has been a dream of mine for years, safe to say it did not dissapoint!...
+
+**Example 2:**
+> Nice shots! I was also in South Korea for two weeks recently. Other than 3 days in Busan, I spent most of my time in Seoul. Hope to visit Jeju-do in the future.
+
+### `rant`
+
+**Definition:** The writer's main purpose is to vent frustration about a travel experience or situation, even if a question is included.
+
+**Example 1:**
+> Left Marseille at 3am Friday And now stuck In Miami at 3am. No flights tomorrow as they are all booked.
+
+**Example 2:**
+> Done with Frontier. Long story short: Arrived at the Atlanta airport 2 hours prior to flight... I'm now out $700... I'm done with Frontier forever.
 
 ### The hardest boundary
 
-**Which two labels:**
+**Which two labels:** `trip_report` and `advice`
 
-**The decision rule I used every time:**
-<!-- e.g. "If the post names a specific checkable fact, it's `analysis`, even
-     if the tone is heated." -->
+**The decision rule I used every time:** If the post's main purpose is to describe the writer's own trip, it is `trip_report`, even if it contains tips or a "next time I'd...". It is `advice` only if it is aimed at someone else's plans (answering a question, "you should", "I'd recommend").
 
+**Tie-breakers for the other boundaries:**
+- `rant` vs `question`: delete the question. If what's left is mainly complaining, it's a `rant`. If the complaining is background for a specific request, it's a `question`.
+- `rant` vs `trip_report`: is the frustration the point of the post, or one part of a trip story?
 
+**Stress test:** I asked an AI tool for 8 posts written to sit on these boundaries and labelled them myself using only the definitions above. All 8 fit one label. The closest call was a trip update that asks "is it normal for feet to hurt this much?", which I called `trip_report` because the question is a side note to the trip. The full list is in `notes.md`.
 
 ---
 
 ## The Dataset
 
-<!-- Where you collected from, how you labelled, your counts, and three hard
-     cases. -->
+**Where the posts came from:** r/travel (public), collected by copy-paste on 2026-11-15. I took posts in the order they appeared in /new, plus 1 to 3 top comments from each. Later I also searched r/travel for complaint posts, because `rant` started very thin (5 of my first 41). I first tried an automated collector, but Reddit returned HTTP 403, so I switched to copy-paste.
 
-**Where the posts came from:**
+What I skipped: deleted/removed posts, mod posts, bots, and pure chit-chat that doesn't ask, advise, report or complain (for example short replies that only poke at the poster, like "... too much what?"). Known limitation: the model has never seen chit-chat, so it will force any chit-chat into one of the four labels.
 
-**How I labelled them:** <!-- Cold first? Pre-labelled with AI and corrected?
-Say so plainly — the disclosure is required, not penalised. -->
+**I collected 151 items, not 200**, because of time. That is above the 150 floor in the stop rule.
+
+**How I labelled them:** By hand, while collecting. I typed a `[label]` tag in front of each item as I pasted it into `posts.txt`, and `txt_to_csv.py` turns that file into `labels.csv`. The first 20 labelled items are marked `cold` in the note column: labelled alone with no tools. **No AI pre-labelling was used.** Every label in the file is my own call. I labelled every item from its own text, as if I hadn't seen the thread, because that's all the model gets.
 
 **Counts per label:**
 
 | Label | Count | Share |
 |---|---|---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
-| **Total** |  | 100% |
+| `question` | 42 | 27.8% |
+| `advice` | 44 | 29.1% |
+| `trip_report` | 34 | 22.5% |
+| `rant` | 31 | 20.5% |
+| **Total** | 151 | 100% |
 
 **Three hard cases**
 
-<!-- Any post that made you pause: what it was, which two labels it could have
-     been, and what you chose. These are worth more than the easy 190. -->
-
 **1.**
-> *The post:*
+> *The post:* "Switzerland - 10 days in a fairy tale..." A 10-day itinerary full of tips like "go early" and "Don't miss the short hike to the Riflesee lake".
 >
-> *Could have been:*
+> *Could have been:* `trip_report` or `advice`
 >
-> *I chose, because:*
+> *I chose, because:* `trip_report`. The post is written to describe their own trip, and the tips are part of telling it. Under my hardest-boundary rule, tips slipping in doesn't make it advice.
 
 **2.**
-> *The post:*
+> *The post:* "Doctor ignoring me for rabies/typhoid vaccine. I've been calling my local doctors office for the past 2 months... Is this a thing? Why would my doctor blackball me like this?... it's just ridiculous that I have to."
 >
-> *Could have been:*
+> *Could have been:* `rant` or `question`
 >
-> *I chose, because:*
+> *I chose, because:* `rant`. Deleting the questions leaves a post that is mainly complaining, and the writer has already decided what to do (find another doctor).
 
 **3.**
-> *The post:*
+> *The post:* "PSA and a Priceline Story: Always call and complain/question if something is not right!..." A long story about the writer's own booking problem and the free flights they got by complaining.
 >
-> *Could have been:*
+> *Could have been:* `advice`, `trip_report` or `rant`
 >
-> *I chose, because:*
+> *I chose, because:* `advice`. Most of the text is the writer's own story, but it's told as a PSA, and the point is to tell other travellers what to do. Purpose wins over how much of the post is story.
+
+More hard cases (the Korea trip with "If I could go back...", the "Kinda of ranting... how do people travel in their 20s?" question, the "Algerian Sahara" report full of prices and booking tips) are in `notes.md`.
 
 ---
 
 ## The Training Run
 
-<!-- Your starting model, your settings, and anything you changed and why. -->
+**Base model:** `distilbert-base-uncased`
 
-**Base model:**
+**Settings:** 3 epochs, learning rate 2e-5, batch size 16, 128 tokens per post, seed 42. Trained on **CPU** (torch 2.15.0+cpu, Windows), and `results.json` records this too.
 
-**Settings:** <!-- epochs, learning rate, batch size, seed -->
+**Anything I changed from the defaults, and why:** No hyperparameters changed. I only set `LABELS` to my four labels. I ran the notebook's code from the terminal with `run_notebook.py` instead of in Jupyter/VS Code, because Jupyter isn't in `requirements.txt`. The script executes the notebook's own code cells in order, unchanged except for `LABELS` and my name, and saves the updated notebook.
 
-**Anything I changed from the defaults, and why:**
+**Split sizes:** train 105 / val 23 / test 23.
 
-**Split sizes:** <!-- train / val / test, and per-label counts in the test
-split. If a label had fewer than about 8 in test, say so — it explains a lot
-of next unit's variance. -->
+| Label | train | val | test |
+|---|---|---|---|
+| `question` | 30 | 6 | 6 |
+| `advice` | 30 | 7 | 7 |
+| `trip_report` | 24 | 5 | 5 |
+| `rant` | 21 | 5 | 5 |
 
-
+**Every label has fewer than 8 examples in the test split** (5 to 7 each), so per-label F1 will move a lot between seeds next unit. `results.json` and `test_split.csv` are committed. Reading the numbers is next unit's work.
 
 ---
 
 ## How I Used AI
 
-<!-- Two specific moments — what you asked, what came back, what you changed.
-
-     ⚠️ Plus disclosure of any pre-labelling. If you had a model pre-label a
-     batch and then read and corrected every one, say that. It's an allowed
-     workflow and disclosing it costs you nothing. Not disclosing it is the
-     problem. -->
-
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* I pasted the "2 Weeks in Korea" post and a reply, and asked whether they were `trip_report` or `advice`.
+- *What came back:* The strongest case for each label, and three possible rules (by purpose / any tip wins / majority of the post), with what each would cost my label balance. It didn't pick one.
+- *What I changed:* I chose the purpose rule, then noticed my other hard calls (rants with questions, questions that say "rant") all followed the same idea. So I made "label by main purpose, not surface features" the general rule for every label.
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- *What I asked for:* Help drafting one-sentence definitions from my purpose rule and the calls I had already made, then 8 posts written to sit on my label boundaries.
+- *What came back:* Draft definitions, two tie-breaker tests, and the 8 test posts.
+- *What I changed:* I labelled the 8 posts myself using only the definitions. All 8 fit one label, so I kept the definitions. My closest call (#7) is written up in `notes.md`.
 
-**Pre-labelling disclosure:**
+Other AI help: a Reddit collector script (blocked by Reddit with HTTP 403, so I switched to copy-paste), the `txt_to_csv.py` converter that reads my `[label]` tags, and `run_notebook.py`, which runs the notebook's cells from the terminal.
+
+**Pre-labelling disclosure:** None. All 151 labels were typed by me while collecting. The first 20 are marked `cold`.
 
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
