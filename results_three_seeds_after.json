@@ -1,0 +1,209 @@
+[
+  {
+    "seed": 42,
+    "n_test": 23,
+    "accuracy": 0.6956521739130435,
+    "f1_macro": 0.6519522144522145,
+    "per_label": {
+      "question": {
+        "precision": 0.5714285714285714,
+        "recall": 0.6666666666666666,
+        "f1": 0.6153846153846154,
+        "support": 6
+      },
+      "advice": {
+        "precision": 0.6666666666666666,
+        "recall": 0.8571428571428571,
+        "f1": 0.75,
+        "support": 7
+      },
+      "trip_report": {
+        "precision": 0.8333333333333334,
+        "recall": 1.0,
+        "f1": 0.9090909090909091,
+        "support": 5
+      },
+      "rant": {
+        "precision": 1.0,
+        "recall": 0.2,
+        "f1": 0.3333333333333333,
+        "support": 5
+      }
+    },
+    "confusion": {
+      "question": {
+        "question": 4,
+        "advice": 2,
+        "trip_report": 0,
+        "rant": 0
+      },
+      "advice": {
+        "question": 1,
+        "advice": 6,
+        "trip_report": 0,
+        "rant": 0
+      },
+      "trip_report": {
+        "question": 0,
+        "advice": 0,
+        "trip_report": 5,
+        "rant": 0
+      },
+      "rant": {
+        "question": 2,
+        "advice": 1,
+        "trip_report": 1,
+        "rant": 1
+      }
+    },
+    "confidence": {
+      "mean_when_right": 0.4312964081764221,
+      "mean_when_wrong": 0.3721199035644531,
+      "accuracy_most_confident_third": 1.0,
+      "accuracy_least_confident_third": 0.5714285714285714,
+      "n_per_third": 7
+    },
+    "device": "cpu",
+    "device_name": "CPU",
+    "torch_version": "2.15.0+cpu",
+    "max_length": 128
+  },
+  {
+    "seed": 7,
+    "n_test": 23,
+    "accuracy": 0.6086956521739131,
+    "f1_macro": 0.5899122807017544,
+    "per_label": {
+      "question": {
+        "precision": 0.38461538461538464,
+        "recall": 0.8333333333333334,
+        "f1": 0.5263157894736842,
+        "support": 6
+      },
+      "advice": {
+        "precision": 1.0,
+        "recall": 0.7142857142857143,
+        "f1": 0.8333333333333334,
+        "support": 7
+      },
+      "trip_report": {
+        "precision": 0.75,
+        "recall": 0.6,
+        "f1": 0.6666666666666666,
+        "support": 5
+      },
+      "rant": {
+        "precision": 1.0,
+        "recall": 0.2,
+        "f1": 0.3333333333333333,
+        "support": 5
+      }
+    },
+    "confusion": {
+      "question": {
+        "question": 5,
+        "advice": 0,
+        "trip_report": 1,
+        "rant": 0
+      },
+      "advice": {
+        "question": 2,
+        "advice": 5,
+        "trip_report": 0,
+        "rant": 0
+      },
+      "trip_report": {
+        "question": 2,
+        "advice": 0,
+        "trip_report": 3,
+        "rant": 0
+      },
+      "rant": {
+        "question": 4,
+        "advice": 0,
+        "trip_report": 0,
+        "rant": 1
+      }
+    },
+    "confidence": {
+      "mean_when_right": 0.43615931272506714,
+      "mean_when_wrong": 0.3830960988998413,
+      "accuracy_most_confident_third": 0.8571428571428571,
+      "accuracy_least_confident_third": 0.42857142857142855,
+      "n_per_third": 7
+    },
+    "device": "cpu",
+    "device_name": "CPU",
+    "torch_version": "2.15.0+cpu",
+    "max_length": 128
+  },
+  {
+    "seed": 2024,
+    "n_test": 23,
+    "accuracy": 0.6956521739130435,
+    "f1_macro": 0.6880952380952381,
+    "per_label": {
+      "question": {
+        "precision": 0.5555555555555556,
+        "recall": 0.8333333333333334,
+        "f1": 0.6666666666666666,
+        "support": 6
+      },
+      "advice": {
+        "precision": 0.7142857142857143,
+        "recall": 0.7142857142857143,
+        "f1": 0.7142857142857143,
+        "support": 7
+      },
+      "trip_report": {
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1": 0.8,
+        "support": 5
+      },
+      "rant": {
+        "precision": 1.0,
+        "recall": 0.4,
+        "f1": 0.5714285714285714,
+        "support": 5
+      }
+    },
+    "confusion": {
+      "question": {
+        "question": 5,
+        "advice": 1,
+        "trip_report": 0,
+        "rant": 0
+      },
+      "advice": {
+        "question": 2,
+        "advice": 5,
+        "trip_report": 0,
+        "rant": 0
+      },
+      "trip_report": {
+        "question": 1,
+        "advice": 0,
+        "trip_report": 4,
+        "rant": 0
+      },
+      "rant": {
+        "question": 1,
+        "advice": 1,
+        "trip_report": 1,
+        "rant": 2
+      }
+    },
+    "confidence": {
+      "mean_when_right": 0.40632760524749756,
+      "mean_when_wrong": 0.375683456659317,
+      "accuracy_most_confident_third": 0.7142857142857143,
+      "accuracy_least_confident_third": 0.42857142857142855,
+      "n_per_third": 7
+    },
+    "device": "cpu",
+    "device_name": "CPU",
+    "torch_version": "2.15.0+cpu",
+    "max_length": 128
+  }
+]
