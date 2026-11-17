@@ -185,6 +185,12 @@ More hard cases (the Korea trip with "If I could go back...", the "Kinda of rant
 
 Other AI help: a Reddit collector script (blocked by Reddit with HTTP 403, so I switched to copy-paste), the `txt_to_csv.py` converter that reads my `[label]` tags, and `run_notebook.py`, which runs the notebook's cells from the terminal.
 
+**Moment 3 (unit 6)**
+
+- *What I asked for:* Help reading my first three-seed results, where my trained model lost to the untrained baseline on every label.
+- *What came back:* It pointed out that my training loss (1.35) was almost exactly what a random guesser scores for 4 labels (about 1.39), and that the matrix showed the model calling 21 of 23 posts `question`. So the model had barely trained, rather than mixing up two of my labels.
+- *What I changed:* I picked "epochs 3 to 10" as my one improvement because of that diagnosis, after checking my agreement report (97%) to rule out my labelling. I made the verdict calls and the staff-set adjudication myself. AI also wrote the helper scripts for this unit (`staff_to_csv.py`, and the `--unit6 --after --epochs` options in `run_notebook.py`).
+
 **Pre-labelling disclosure:** None. All 151 labels were typed by me while collecting. The first 20 are marked `cold`.
 
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
@@ -311,34 +317,61 @@ With only one disagreement, there isn't much of a pattern. It's a single slip on
 
 ### Run Log — After
 
+Same three seeds and splits, 10 epochs instead of 3. Nothing else changed. CPU, torch 2.15.0+cpu.
+
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.80 | 0.696 | 0.609 | 0.696 | MISSED |
+| 2. Per-label F1 | question, advice, trip_report ≥ 0.70; rant ≥ 0.50 | q 0.615, a 0.750, t 0.909, r 0.333 | q 0.526, a 0.833, t 0.667, r 0.333 | q 0.667, a 0.714, t 0.800, r 0.571 | MISSED |
+| 3. Beats baseline accuracy by ≥ 20 points | ≥ +0.20 | +0.131 (0.696 vs 0.565) | not run | not run | MISSED |
+| 4. Agreement with staff labels | ≥ 70% | 97% (29/30), unchanged | | | MET |
+| 5. Label balance in labels.csv | none > 50%, none < 10% | unchanged (29.1% / 20.5%) | | | MET |
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.696 | 0.609 | 0.696 | 0.087 |
+| Macro F1 | 0.652 | 0.590 | 0.688 | 0.098 |
+| F1 — `question` | 0.615 | 0.526 | 0.667 | 0.140 |
+| F1 — `advice` | 0.750 | 0.833 | 0.714 | 0.119 |
+| F1 — `trip_report` | 0.909 | 0.667 | 0.800 | 0.242 |
+| F1 — `rant` | 0.333 | 0.333 | 0.571 | 0.238 |
+
+Confusion matrix after, seed 42:
+
+| true \ predicted | question | advice | trip_report | rant |
+|---|---|---|---|---|
+| **question** | 4 | 2 | 0 | 0 |
+| **advice** | 1 | 6 | 0 | 0 |
+| **trip_report** | 0 | 0 | 5 | 0 |
+| **rant** | 2 | 1 | 1 | 1 |
+
+Before and after, side by side (accuracy):
+
+| Seed | Before (3 epochs) | After (10 epochs) | Change |
+|---|---|---|---|
+| 42 | 0.348 | 0.696 | +0.348 |
+| 7 | 0.435 | 0.609 | +0.174 |
+| 2024 | 0.609 | 0.696 | +0.087 |
+| Spread | 0.261 | 0.087 | 17 points more stable |
 
 **Did it help, and how do I know:**
-
-<!-- If it didn't, say so. Relabelling that didn't help is a genuinely
-     interesting result and earns full credit. -->
-
-
+Yes. Accuracy went up on all three seeds, macro F1 went up on all three, and the spread between seeds dropped from 26 points to 9. The model stopped collapsing to `question`: on seed 42 it now gets all 5 `trip_report` posts right (it got 0 before), and `rant` is above 0 on every seed. The training loss confirms the diagnosis. With 10 epochs it fell to 0.86 by the end, well below the ~1.39 of a random guesser, where before it stayed at 1.35. The validation loss was still falling at epoch 10 (1.02), so this doesn't look like overfitting yet. The trained model now beats the baseline on seed 42 (0.696 vs 0.565). No criterion changed from MISSED to MET, though: the improvement was real but not big enough to reach my targets.
 
 ---
 
 ## What's Still Broken
 
-<!-- For each criterion still missed: what you'd do, and why you stopped. -->
+**Criterion 1, overall accuracy ≥ 0.80 (best 0.696).**
+What I'd do: collect up to 200+ posts, especially more rants, and try more epochs as a separate, measured change, since validation loss was still going down at epoch 10. Why I stopped: the brief allows one change, and I ran out of time.
 
+**Criterion 2, per-label F1 (`rant` 0.33–0.57, `question` 0.53–0.67).**
+`rant` is still the weakest label. In the after-matrix its 5 posts went to four different labels (1 right, 2 `question`, 1 `advice`, 1 `trip_report`). `rant` has the fewest training examples (21 per split), and it's the label my own rules define *against* surface features ("a rant can contain a question", "frustration can be part of a trip story"). What I'd do: add about 30 more rants, the brief's "add examples to your thinnest label" fix. Why I stopped: one change only.
 
+**Criterion 3, beat the baseline by ≥ 20 points (+13 on seed 42).**
+It now beats the baseline, but by 13 points, not 20. The baseline was also only run on seed 42's test split. What I'd do: run `baseline.py` on the seed 7 and seed 2024 test splits so the comparison covers all three seeds. Why I stopped: time.
 
-**The gap between what I meant my labels to capture and what the model
-learned:**
-<!-- Two sentences. Your confusion matrix is the evidence. -->
-
-
+**The gap between what I meant my labels to capture and what the model learned:**
+I meant my labels to capture the writer's *purpose*, so that a rant with a question in it is still a rant and a trip story full of tips is still a trip report. The matrix suggests the model learned closer to surface form instead: it separates `trip_report` (long first-person stories) and `advice` well, but rants get scattered to `question`, `advice` and `trip_report`, which are exactly the labels whose surface features (a question mark, a recommendation, a story) my purpose rule says to ignore.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
