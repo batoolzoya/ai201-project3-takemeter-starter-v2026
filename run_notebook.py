@@ -8,6 +8,8 @@ training code is changed - only the two FILL THIS IN lines are set.
 Usage (repo folder, venv active):
     python run_notebook.py            # unit 5: sections 1-5 (stops at "Unit 6 starts here")
     python run_notebook.py --unit6    # unit 6: sections 1-7 (includes three seeds + matrix)
+    python run_notebook.py --unit6 --after --epochs 10
+                                      # unit 6 Milestone 5: RUN_LABEL="after", one setting changed
 
 It also saves takemeter.ipynb with LABELS and NAME filled in, so the notebook
 in your repo matches what was run.
@@ -35,6 +37,10 @@ if not NB.exists():
 
 nb = json.loads(NB.read_text(encoding="utf-8"))
 unit6 = "--unit6" in sys.argv
+after = "--after" in sys.argv
+epochs = None
+if "--epochs" in sys.argv:
+    epochs = int(sys.argv[sys.argv.index("--epochs") + 1])
 
 
 def src(cell):
@@ -44,6 +50,10 @@ def src(cell):
 
 def fill_in(code):
     code = re.sub(r'^LABELS\s*=.*$', f"LABELS = {LABELS!r}", code, flags=re.M)
+    if after:
+        code = re.sub(r'^RUN_LABEL\s*=.*$', 'RUN_LABEL = "after"', code, flags=re.M)
+    if epochs is not None:
+        code = re.sub(r'^EPOCHS\s*=.*$', f"EPOCHS = {epochs}", code, flags=re.M)
     code = re.sub(r'^NAME\s*=.*$', f'NAME  = "{NAME}"', code, flags=re.M)
     code = re.sub(r'^EMAIL\s*=.*$', f'EMAIL = "{EMAIL}"', code, flags=re.M)
     return code
