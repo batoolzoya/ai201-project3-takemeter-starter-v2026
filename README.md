@@ -196,148 +196,118 @@ Other AI help: a Reddit collector script (blocked by Reddit with HTTP 403, so I 
 
 ## Baseline vs. Trained
 
-<!-- Both models on the same posts. `python baseline.py --trained results.json`
-     prints this table for you. -->
+Both models on the same 23 held-out posts (`test_split.csv`, seed 42). The baseline is `facebook/bart-large-mnli` doing zero-shot classification with my four definitions from `label_definitions.txt` as the only input.
 
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | 0.565 | 0.348 | -0.217 |
+| Macro F1 | 0.561 | 0.222 | -0.339 |
+| F1 — `advice` | 0.526 | 0.444 | -0.082 |
+| F1 — `question` | 0.800 | 0.444 | -0.356 |
+| F1 — `rant` | 0.250 | 0.000 | -0.250 |
+| F1 — `trip_report` | 0.667 | 0.000 | -0.667 |
 
 **What I predicted before I looked:**
-<!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
-     prediction made afterwards isn't one. -->
+I expected the trained model to do best on `question`, then `rant`, then `trip_report`, then `advice`.
 
 **What the gap actually means:**
-<!-- If the baseline matched your trained model, your fine-tuning added
-     nothing — and that is a real finding, not a failure. Say it plainly. -->
-
-
+The untrained baseline beat my trained model on every label. My fine-tuning, as run with the default settings, added nothing. It made things worse. `question` really was the trained model's best label, as I predicted, but only because it called almost everything `question` (see the matrix below). My prediction was wrong about `rant`: the trained model never got a single rant right. The baseline is also slower (a few seconds per post on CPU, against well under a second for the trained model), but that speed is no use while it's this inaccurate.
 
 ---
 
 ## Run Log — Before
 
-<!-- Five criteria across three seeds. The notebook's section 6 prints the
-     spread table; the Target and Verdict columns are yours. -->
+Trained on CPU (torch 2.15.0+cpu, Windows), 3 epochs, learning rate 2e-5, batch 16, 151 labelled posts (105 train / 23 val / 23 test per seed).
 
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.80 | 0.348 | 0.435 | 0.609 | MISSED |
+| 2. Per-label F1 | question, advice, trip_report ≥ 0.70; rant ≥ 0.50 | q 0.444, a 0.444, t 0.000, r 0.000 | q 0.444, a 0.667, t 0.000, r 0.000 | q 0.615, a 0.737, t 0.667, r 0.000 | MISSED |
+| 3. Beats baseline accuracy by ≥ 20 points | ≥ +0.20 | -0.217 (0.348 vs 0.565) | not run | not run | MISSED |
+| 4. Agreement with staff labels | ≥ 70% | 97% (29/30), one number, not per seed | | | MET |
+| 5. Label balance in labels.csv | none > 50%, none < 10% | max 29.1% (`advice`), min 20.5% (`rant`), same file for every seed | | | MET |
+
+The notebook's spread table:
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.348 | 0.435 | 0.609 | 0.261 |
+| Macro F1 | 0.222 | 0.278 | 0.505 | 0.283 |
+| F1 — `question` | 0.444 | 0.444 | 0.615 | 0.171 |
+| F1 — `advice` | 0.444 | 0.667 | 0.737 | 0.292 |
+| F1 — `trip_report` | 0.000 | 0.000 | 0.667 | 0.667 |
+| F1 — `rant` | 0.000 | 0.000 | 0.000 | 0.000 |
+
+Accuracy moved 26 points across the three seeds, more than the 10-point line the notebook uses for a stable measure.
 
 ### Confusion matrix
 
-<!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
-     An image of a matrix earns nothing. -->
+Seed 42, 23 test posts:
 
-| true \ predicted |  |  |  |
-|---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+| true \ predicted | question | advice | trip_report | rant |
+|---|---|---|---|---|
+| **question** | 6 | 0 | 0 | 0 |
+| **advice** | 5 | 2 | 0 | 0 |
+| **trip_report** | 5 | 0 | 0 | 0 |
+| **rant** | 5 | 0 | 0 | 0 |
 
 **My biggest off-diagonal number, and what it means:**
-<!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
-     direction. "7 real analysis posts were called hot_take and only 3 went the
-     other way" is a direction, not just an error rate. -->
-
-
+5 real `advice` posts were called `question`, and 0 went the other way. But `trip_report` and `rant` also lost all 5 of their posts to `question`. So this isn't one boundary the model mixed up: it called 21 of 23 posts `question` and only ever predicted one other label (`advice`, twice). It never learned to tell my labels apart at all.
 
 ---
 
 ## Verdicts and Diagnoses
 
-<!-- MET or MISSED against LAST UNIT's target. The target has to hold across
-     all three seeds, not turn up sometimes. -->
-
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Overall accuracy | ≥ 0.80 on all three seeds | MISSED | All three seeds were below 0.80 (best was 0.609). |
+| 2 | Per-label F1 | ≥ 0.70 (rant ≥ 0.50) on all three seeds | MISSED | No label reached its target on all three seeds. `rant` was 0.000 every time. |
+| 3 | Beats baseline by ≥ 20 points | on all three seeds | MISSED | The baseline was only scored on seed 42's test posts, and there the trained model was 21.7 points *below* it. The target has to hold on every seed, so one clear miss decides it. |
+| 4 | Agreement with staff | ≥ 70% | MET | 29 of 30 = 97%. |
+| 5 | Label balance | none > 50%, none < 10% | MET | Largest label 29.1%, smallest 20.5%. |
 
 **Diagnoses**
 
-<!-- For each miss: the cause, and how you know. The four common causes are:
-     too few examples for a label, a boundary you applied inconsistently, a
-     genuinely hard label pair, and a task the model can't reach from this
-     much data.
+**Criteria 1, 2 and 3: the model didn't train enough to learn anything.**
+- *Cause:* 3 epochs over 105 training posts is only 21 small training steps, and the model barely moved.
+- *Evidence 1, the loss:* training loss went from 1.37 to 1.33 on seed 42 (final average 1.347). A model that's purely guessing among 4 labels scores about 1.39 (ln 4), so it finished almost exactly where a random guesser starts.
+- *Evidence 2, the matrix:* it called 21 of 23 posts `question`, including every `rant` and every `trip_report`. Rants and trip reports look nothing like questions, so this is a model that collapsed to one answer, not one that confused two similar labels.
+- *Evidence 3, the agreement report:* it says this is a model problem, not a labelling problem. When I applied someone else's written, purpose-style rules to 30 posts, I matched them on 29 (97%), and my one miss was a rule I applied loosely once, not a pattern. That's indirect evidence (it's a different taxonomy), but it suggests I can apply a written rule consistently. Inconsistent labels would also show up as confusion between specific pairs, like `trip_report` and `advice`, not as everything going to one label.
+- *What this rules out:* it isn't class imbalance. My labels are 20–29% each, so no label dominates the data.
 
-     ⚠️ Use your agreement report as evidence. It is the only instrument you
-     have that can tell a LABELLING problem from a MODEL problem, and this
-     section is graded on whether you used it that way. -->
-
-
+**On top of that: the test splits are too small for a stable measure.**
+- Each test split has only 5–7 posts per label, so one post moves a label's F1 a lot. Accuracy swung 26 points across seeds (0.348 to 0.609), and `trip_report` went from 0.000 to 0.667 depending only on which posts landed in the test set.
+- This comes from collecting 151 posts instead of 200. It explains the spread, but not the collapse: even the best seed called most things `question`.
 
 ---
 
 ## Agreement Report
 
-<!-- Your rate against the staff set, and every disagreement adjudicated.
+**Agreement rate:** 29 / 30 = 97%
 
-     Remember you labelled these 30 under the STAFF taxonomy in
-     data/staff_taxonomy.md, not your own — so every argument below is made
-     from those definitions and those decision rules. -->
-
-**Agreement rate:** ___ / 30 = ___%
-
-<!-- Nobody grades this number. A 60% who argues every disagreement from the
-     stated rules beats a 95% who wrote "staff was right" nine times. Several
-     of the 30 were chosen because they're genuinely ambiguous — you should be
-     winning some of these. -->
+I labelled the 30 posts under `data/staff_taxonomy.md`, not my own taxonomy, and committed my labels (`my_staff_labels.csv`) before I saw the staff file.
 
 **Disagreements**
 
-<!-- Three lines each: the post, both labels, and who you think is right and
-     why — grounded in the staff definitions you were both applying.
-
-     Then sort each into one of three piles:
-       (a) the rule covered it and I applied it loosely → a consistency problem
-       (b) the rule genuinely doesn't say               → a gap in the definitions
-       (c) the rule is ambiguous here and my reading is defensible → argue it.
-           This is a legitimate win.
-
-     Pile (a) is the one that matters most for your diagnosis: if you applied a
-     written rule two different ways on 30 posts, that is direct evidence about
-     what you did across your own 200. -->
-
 **1.**
-> *The post:*
+> *The post:* "Three of us ran the same session on the same day, different shoes, within 10 seconds of each other over 5 miles. I'm not saying shoes do nothing, but whatever they do was smaller than the noise between three people." (sp_010)
 >
-> *Staff said / I said:*
+> *Staff said / I said:* `analysis` / `hot_take`
 >
-> *My call, and why:*
+> *My call, and why:* Staff is right. The claim is built on the fact: three runners, same session, 5 miles, within 10 seconds. Take the numbers away and there's no argument left. That is Rule 1's test, "does the fact carry the argument?" I had read the small, private sample as "no real support", but the definition asks whether a fact carries the argument, not whether the sample is big. I labelled three similar posts (sp_002, sp_005, sp_007, each one runner's own measurements) as `analysis`, so I applied the rule one way three times and the other way once.
 >
-> *Which pile:*
-
-**2.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
+> *Which pile:* (a), the rule covered it and I applied it loosely.
 
 **What the pattern in my disagreements tells me:**
-
-
+With only one disagreement, there isn't much of a pattern. It's a single slip on Rule 1, not a boundary I keep getting wrong. For my own project, this is the main evidence that my 151 labels are probably consistent, so my model's misses are more likely about training than about my labelling.
 
 ---
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** Epochs from 3 to 10. Nothing else changed: same 151 labels, same learning rate (2e-5), batch size 16, same three seeds and therefore the same splits. Run with `python run_notebook.py --unit6 --after --epochs 10`, which sets `RUN_LABEL = "after"` and `EPOCHS = 10` in the notebook.
 
-**Which diagnosis pointed at it:**
+**Which diagnosis pointed at it:** The diagnosis for criteria 1–3. The training loss stayed at chance level (1.35 against 1.39 for random guessing) after only 21 training steps, and the model collapsed to calling almost everything `question`. That points at too little training, not at my labels (97% agreement) or at imbalance (every label is 20–29%). 10 epochs gives it about 70 steps.
 
 ### Run Log — After
 
