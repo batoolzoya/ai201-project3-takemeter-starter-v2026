@@ -1,4 +1,104 @@
-# Running TakeMeter
+# Running TakeMeter (r/travel)
+
+## Quick start: try my project in about 10 minutes
+
+TakeMeter sorts r/travel posts into `question`, `advice`, `trip_report` or
+`rant` by the writer's main purpose. Everything runs on your own machine. No
+accounts or keys are needed.
+
+**You need:** Python 3.11, 3.12 or 3.13 (not 3.14), about 3 GB free disk for the
+quick start (9 GB if you also run the baseline), and git.
+
+### 1. Clone and set up
+
+```bash
+git clone https://github.com/batoolzoya/ai201-project3-takemeter-starter-v2026.git
+cd ai201-project3-takemeter-starter-v2026
+```
+
+**Windows (PowerShell):**
+```
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python test.py
+```
+If activation says scripts are disabled, run
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once and try again.
+
+**macOS / Linux:**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+python test.py
+```
+
+`test.py` should finish with `0 failed`. One `[WARN] Baseline model` line is
+expected; you only need that model for step 4.
+
+### 2. See it classify (the demo)
+
+```
+python demo.py --examples
+```
+
+The **first run trains the model once** (10 epochs on my 151 labelled posts,
+about 4 minutes on a laptop CPU, plus a ~270 MB model download) and saves it to
+`models/takemeter/`, which git ignores. It then classifies 8 boundary posts I
+wrote for my stress test and shows how many match my own labels.
+
+Every later run loads the saved model in seconds. To type your own posts:
+
+```
+python demo.py
+```
+
+Paste or type a travel post and press Enter. You get the label, the
+confidence, the runner-up labels and the time taken. Press Enter on an empty
+line to quit.
+
+### 3. Check my labels against the staff set (instant)
+
+```
+python agreement.py
+```
+
+This shows my 29/30 (97%) agreement with the staff labels and the one post we
+disagreed on.
+
+### 4. Optional, slower
+
+```
+python baseline.py --trained results.json
+```
+Zero-shot baseline vs my trained model on the same 23 test posts. The first run
+downloads ~1.6 GB.
+
+```
+python run_notebook.py
+```
+Retrains from scratch with the notebook's own code (sections 1-5, the original
+3-epoch settings). No Jupyter needed. It overwrites `results.json` in **your**
+copy only. `python run_notebook.py --unit6` runs the three-seed test (~4
+minutes); add `--after --epochs 10` for the improved run (~12 minutes).
+
+### If something goes wrong
+
+| What you see | Fix |
+|---|---|
+| `ModuleNotFoundError` | The venv isn't active. Run the activate line again; the prompt should start with `(.venv)` |
+| `Python version` FAIL in test.py | Use Python 3.11-3.13 and recreate `.venv` |
+| Training is slow or the machine crawls | Close the browser; training peaks around 2 GB of RAM |
+| `UnicodeEncodeError` on Windows | Run `$env:PYTHONIOENCODING="utf-8"` and try again |
+| `demo.py` retrains every time | Make sure you run it from the repo folder, so `models/takemeter/` is found |
+
+---
+
+# Original starter guide
+
 
 Everything about how the starter works.
 
