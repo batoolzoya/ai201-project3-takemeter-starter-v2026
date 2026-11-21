@@ -1,0 +1,22 @@
+# Capstone trial set for: python demo.py --batch trial_posts.txt
+# One post per line. "label || post" = the label I gave it. None are in labels.csv.
+# <EMPTY> and <SPACES> are bad inputs that should be rejected, not classified.
+#
+# The 8 stress-test posts (Milestone 2):
+trip_report || Just got back from Lisbon. Honestly the trams were a nightmare, packed every single time and two of them broke down while we were on them. Food was great though and the views from Alfama made up for it.
+advice || Spent 3 weeks in Vietnam last spring. If you go, skip Ha Long Bay day tours and do the overnight Lan Ha cruise instead, it's quieter and about the same price.
+rant || Why does every airline now charge for seat selection?? I paid $400 for a ticket and they want another $45 so I can sit next to my own kid. Is there any airline left that doesn't do this?
+question || I'm in Rome right now and it's my first time in Europe. Pickpocketed on the metro this morning. Anyone know if the police station near Termini handles tourist reports in English?
+advice || Have you tried booking directly with the hotel instead? I did that in Porto last year and they upgraded me for free.
+rant || Hostels in Amsterdam are getting ridiculous. EUR 70 for a bunk in a 12-bed dorm. I remember when it was EUR 25. Travel used to be for everyone.
+trip_report || Day 4 in Japan. Kyoto was beautiful but I underestimated how much walking there is. Is it normal for feet to hurt this much? Thinking of skipping Nara tomorrow.
+trip_report || Took the night train from Vienna to Venice. Would I do it again? Absolutely, but book a private compartment. The 6-berth couchette was miserable.
+# The 3 Demo Day posts:
+advice || If you're flying into Lisbon, skip the taxi line and take the red metro line from the airport. It's under 2 euros and gets you downtown in 20 minutes.
+rant || Third time this year my checked bag didn't make the connection. Two days in Rome with only the clothes I flew in, and the airline just keeps saying "it's being traced". Why do we even pay for bags anymore?
+trip_report || Just got back from 5 days in Hanoi. Spent most mornings walking around Hoan Kiem Lake and the evenings eating street food in the Old Quarter. The motorbike traffic took a day to get used to, but I loved it.
+# A long post (well over 128 tokens), so the model only reads the start:
+trip_report || Two weeks in Peru, finally home and still processing it. We started in Lima for three days, mostly eating: ceviche at a tiny place in Miraflores, a long lunch in Barranco, and far too many churros. Then a short flight to Cusco, where the altitude hit harder than I expected; the first night I had a headache and could barely climb the stairs to our guesthouse. We took it slow for two days, drank a lot of coca tea, and wandered San Blas. From there we did the Sacred Valley by car with a driver, stopping at Pisac market, the salt pans at Maras and the circular terraces at Moray. We stayed two nights in Ollantaytambo, which I liked more than Cusco because it was quieter and the ruins are right above the town. The train to Aguas Calientes was beautiful, and Machu Picchu itself was cloudy at sunrise and then cleared around nine, which made the whole morning feel like a reveal. After that we flew to Arequipa, saw the white stone churches, and did a two day trip to Colca Canyon where we watched condors circling below the viewpoint. The last two days were back in Lima, mostly resting and packing. Overall it was one of the best trips I have taken, and the variety, from coast to mountains to canyon, is what made it.
+# Bad inputs - should be rejected and still logged:
+rejected || <EMPTY>
+rejected || <SPACES>

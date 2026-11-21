@@ -58,9 +58,48 @@ python demo.py
 
 Paste or type a travel post and press Enter. You get the label, the
 confidence, the runner-up labels and the time taken. Press Enter on an empty
-line to quit.
+line to quit. Every post you classify is also logged (see step 3).
 
-### 3. Check my labels against the staff set (instant)
+### 3. Capstone: the instrumented run (Path B, local with logs)
+
+This is the single command the capstone is tested with:
+
+```
+python demo.py --batch trial_posts.txt
+```
+
+It classifies the 14 posts in `trial_posts.txt` (12 real posts with my labels,
+one long post over 128 tokens, and 2 bad inputs: an empty post and a
+whitespace-only post), then prints a summary: how many were classified,
+rejected or errored, how many log records were written, milliseconds per post
+(mean, median, p95, max), model load time, and how many match my labels.
+
+**Every run writes to `logs/predictions.jsonl`**, one JSON record per line:
+`ts`, `session`, `event` (`load` or `predict`), `mode`, `input` (first 300
+characters), `input_chars`, `input_tokens`, `truncated` (true if over 128
+tokens), `status` (`ok`, `rejected` or `error`), `label`, `confidence`,
+`scores` (all four labels), `expected` (my label, in batch mode),
+`duration_ms` and `error`. Rejected and failed runs are logged too. To read
+the last records back:
+
+```
+python demo.py --log
+python demo.py --log 20
+```
+
+**What the environment needs:**
+
+| Thing | Detail |
+|---|---|
+| Python | 3.11, 3.12 or 3.13 (tested on 3.11.9, Windows 11, CPU only) |
+| Packages | `requirements.txt` (pinned ranges: torch, transformers, datasets, accelerate, pandas, scikit-learn) |
+| Base model | `distilbert-base-uncased`, ~268 MB, downloaded automatically on the first run |
+| Trained model | `models/takemeter/`, ~268 MB, created by the first `demo.py` run (about 4 minutes on CPU), git-ignored |
+| Disk | about 3 GB free (packages + models) |
+| Memory | about 2 GB free while training; much less after |
+| Keys / accounts | none |
+
+### 4. Check my labels against the staff set (instant)
 
 ```
 python agreement.py
@@ -69,7 +108,7 @@ python agreement.py
 This shows my 29/30 (97%) agreement with the staff labels and the one post we
 disagreed on.
 
-### 4. Optional, slower
+### 5. Optional, slower
 
 ```
 python baseline.py --trained results.json
@@ -93,6 +132,7 @@ minutes); add `--after --epochs 10` for the improved run (~12 minutes).
 | `Python version` FAIL in test.py | Use Python 3.11-3.13 and recreate `.venv` |
 | Training is slow or the machine crawls | Close the browser; training peaks around 2 GB of RAM |
 | `UnicodeEncodeError` on Windows | Run `$env:PYTHONIOENCODING="utf-8"` and try again |
+| `--log` says no records yet | Run `demo.py` at least once from the repo folder first |
 | `demo.py` retrains every time | Make sure you run it from the repo folder, so `models/takemeter/` is found |
 
 ---
