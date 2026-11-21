@@ -410,3 +410,24 @@ I meant my labels to capture the writer's *purpose*, so that a rant with a quest
 ---
 
 📖 **How to run this project: [RUNNING.md](RUNNING.md)**
+
+---
+
+## Capstone
+
+**What This Extends**
+
+TakeMeter, my unit 5–6 classifier that sorts r/travel posts into `question`, `advice`, `trip_report` or `rant` by the writer's main purpose (DistilBERT fine-tuned on 151 posts I labelled). Before the capstone it only ran inside a training notebook, plus a small `demo.py` I wrote for Demo Day that classified posts in the terminal but recorded nothing. What's new: every classification now writes a structured log record, bad input is rejected and logged instead of crashing or being skipped, a batch mode runs a file of posts with a timing summary, and I measured what one run costs.
+
+**The Shape**
+
+**Shape A: deploy and instrument.** The extension is the operational layer around the classifier I already have: one documented start command (`python demo.py --batch trial_posts.txt`), a structured log (`logs/predictions.jsonl`) with a record for every load, prediction, rejection and error, and a measured cost per post in seconds of CPU.
+
+Out of scope, on purpose:
+- **No changes to the model.** No new labels, no new training data, no retraining beyond the 10-epoch setup from unit 6. The model is what it was.
+- **No hosting.** The model is ~270 MB and the free host has 512 MB of memory, so it runs locally (Path B).
+- **No new interface.** It stays a command-line tool. No web page and no API endpoint.
+
+**Running It**
+
+Path B, local with logs. The start command, the environment it needs (Python 3.11–3.13, pinned packages, the ~268 MB base model and the ~268 MB trained model) and how to read the log back are in [RUNNING.md](RUNNING.md), section 3 of the Quick start.
