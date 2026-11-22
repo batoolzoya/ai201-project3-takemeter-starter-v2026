@@ -538,3 +538,72 @@ Verdicts and diagnoses:
 **What I changed:** I trained the model for **20 epochs instead of 10**, with nothing else changed: same 151 labels, same seed (42), same learning rate and batch size, same trial file, same code path. It's run as `python demo.py --epochs 20 --batch trial_posts.txt`, which trains once into `models/takemeter_e20/` and leaves the 10-epoch model untouched.
 
 **Why:** the diagnosis for criterion 5 names the model stage. Its confidences are nearly flat (27–52%), and unit 6 showed it was still improving when training stopped at 10 epochs. More training is the one change aimed at that mechanism. It doesn't change the model's size, so it shouldn't change the timing criteria (3 and 4). This crosses one of my out-of-scope lines ("no retraining beyond the 10-epoch setup"). I'm doing it on purpose, because the diagnosis pointed at the model and not at the operational layer.
+
+Run log after the improvement: `python demo.py --epochs 20 --batch trial_posts.txt` three times, then `python trial_report.py after`. Full output in `results/capstone_after.md`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Every post leaves a complete log record | 14 of 14 | 14/14 | 14/14 | 14/14 | MET |
+| 2. Bad inputs rejected and logged | 2 of 2 | 2/2 | 2/2 | 2/2 | MET |
+| 3. Real posts classified under 66 ms (incl. first) | 10 of 12 | 10/12 | 10/12 | 10/12 | MET |
+| 4. Mean ms per classified post (cost) | < 110 ms | 61.4 ms | 61.8 ms | 63.5 ms | MET |
+| 5. Real posts matching my label | ≥ 8 of 12 | 9/12 | 9/12 | 9/12 | MET |
+
+Per-post timings (ms), in file order:
+- Run 1: model load 148 ms; posts: 123, 51, 57, 55, 44, 48, 47, 46, 48, 56, 53, 108
+- Run 2: model load 145 ms; posts: 121, 51, 56, 52, 44, 51, 50, 50, 47, 57, 56, 106
+- Run 3: model load 147 ms; posts: 136, 54, 56, 54, 42, 49, 53, 46, 50, 59, 57, 106
+
+Before and after, side by side:
+
+| Criterion | Before (10 epochs) | After (20 epochs) |
+|---|---|---|
+| 1. Complete log records | 14/14, 14/14, 14/14 | 14/14, 14/14, 14/14 |
+| 2. Bad inputs rejected | 2/2, 2/2, 2/2 | 2/2, 2/2, 2/2 |
+| 3. Posts under 66 ms | 10/12, 10/12, 10/12 | 10/12, 10/12, 10/12 |
+| 4. Mean ms per post | 63.1, 61.6, 63.2 | 61.4, 61.8, 63.5 |
+| 5. Matches my label | 7/12, 7/12, 7/12 (MISSED) | 9/12, 9/12, 9/12 (MET) |
+| Top confidence range | 27–52% | 33–90% |
+
+The five posts that missed before, now:
+
+| Post | My label | Before | After |
+|---|---|---|---|
+| "Why does every airline now charge for seat selection??…" | rant | question (36%) | question (67%), still wrong |
+| "Have you tried booking directly with the hotel instead?…" | advice | question (37%) | question (81%), still wrong |
+| "Hostels in Amsterdam are getting ridiculous…" | rant | question (29%) | **rant (52%)** |
+| "Took the night train from Vienna to Venice. Would I do it again?…" | trip_report | question (27%) | advice (33%), still wrong |
+| "Third time this year my checked bag didn't make the connection…" | rant | question (34%) | **rant (60%)** |
+
+**Did it help?** Yes, on the one criterion it was aimed at, and with no cost to the others. Matches went from 7 to 9 of 12 in all three runs, and two of the three rants are now recognised, so the model no longer sends everything it's unsure about to `question`: the three remaining misses go to two different labels. Confidence went up across the board. The timing criteria didn't move (means of 61–64 ms before and after, and the same two slow posts), which is what I expected, since the model is the same size and only its weights changed. One new thing to watch: the model is now *confidently* wrong on one post. The hotel post ("Have you tried…?") was called `question` with 81% confidence. Higher confidence doesn't always mean a correct answer.
+
+A note on how the after table was made: my first `trial_report.py after` picked the last three batch runs regardless of model, so its "Run 1" was actually the third *before* run (session `c4b8b636`, which also appears in the before table). I spotted it because that session id appeared in both tables. I fixed `trial_report.py` to only count runs of the model being reported (`models/takemeter_e20` for after), ran one more 20-epoch trial, and re-made the table above from three real 20-epoch runs (`4c280ac1`, `e854f974`, `b0e5d87c`).
+
+**What's Still Broken**
+
+All five criteria are met after the improvement, so the honest question is which targets were too easy.
+
+- **Criterion 4 was set too loose.** I set it at under 110 ms, and every run came in at 61–64 ms. I'd tighten it to **under 70 ms**, which still leaves room for a slower moment without being a target I can't miss.
+- **Criterion 2 is too small a test.** 2 of 2 bad inputs is a pass on only two kinds of bad input (empty and whitespace-only). I'd tighten it to **10 of 10**, adding more kinds: emoji-only, a single word, a non-English post, a URL with no text, and a 5,000-character paste.
+- **Criterion 3 was not too easy, but it's one slow post from failing.** It hit exactly 10 of 12 in all six runs, and the same two posts are slow every time: the first post after the model loads (121–147 ms) and the 290-token post (104–108 ms).
+- **Criterion 5 passes, but three posts still fail the purpose rule.** The airline rant ends in "??", so it reads as a question. The hotel advice is phrased as a question. The night-train trip report is full of advice. All three are the boundaries my unit 5 rules say to judge by purpose, not surface form, so they're the hardest kind of post for this model.
+
+What I cut: I didn't add a "needs review" flag for low-confidence answers, or a web endpoint. Both were out of scope, and the review flag would be less useful now that the model is confidently wrong on the hotel post.
+
+**If this were real and I had another unit:** the first thing I'd do is add a single warm-up prediction when the model loads, so the first real post isn't the slow one. Criterion 3 sat exactly on its boundary in all six runs because of that first-post delay (121–147 ms versus about 50 ms for the rest). It's a few lines in the operational layer I built, and it's the cheapest change that turns my most fragile pass into a safe one.
+
+**How I Used AI**
+
+**Moment 1, picking the shape and writing the criteria**
+
+- *What I asked for:* I asked Claude to choose the fastest shape for me, and then for help with criteria.
+- *What came back:* It chose Shape A (deploy and instrument), because my Demo Day `demo.py` already ran outside the editor and timed each post. It built the logging, the batch mode and `trial_report.py`. For the criteria, it gave me sentence frames with blanks and facts from my first run, but said the numbers and reasons had to be mine.
+- *What I changed:* I filled in the targets and reasons. It then pointed out two problems, without rewriting them. My reason for criterion 3 claimed a result my first run hadn't actually reached (it was 9 of 12 under 65 ms, not 10). And criterion 5 at "7 of 12" couldn't fail, because the model gives the same labels every run. I changed criterion 3 to under 66 ms and raised criterion 5 to 8 of 12 before committing.
+
+**Moment 2, the mixed-up after table**
+
+- *What I asked for:* I pasted my first `trial_report.py after` output and asked for the final write-up.
+- *What came back:* It noticed that the table's "Run 1" had the same session id as the third *before* run, so the report had mixed a 10-epoch run into the after results. It fixed `trial_report.py` to filter by model, and told me to run a third 20-epoch trial.
+- *What I changed:* I ran the third trial and re-made the after table. The real result held up (9/12 in all three runs), and I wrote the mix-up into The Improvement section instead of hiding it.
+
+Other AI help this unit: Claude wrote the code changes (`demo.py` logging, input rejection, batch mode and `--epochs`; `trial_report.py`; `trial_posts.txt`) and drafted the README sections from my real output. I ran everything, made the verdict calls, and wrote the criteria targets and reasons myself.

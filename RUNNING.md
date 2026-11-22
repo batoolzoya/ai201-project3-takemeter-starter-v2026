@@ -87,6 +87,20 @@ python demo.py --log
 python demo.py --log 20
 ```
 
+**The capstone improvement and run logs:**
+
+```
+python demo.py --epochs 20 --batch trial_posts.txt
+python trial_report.py before
+python trial_report.py after
+```
+
+The first command trains a 20-epoch model once (about 8 minutes on CPU) into
+`models/takemeter_e20/` and leaves the 10-epoch model untouched. Run it three
+times for three trials. `trial_report.py` reads the last three batch runs of
+each model back from the log and writes `results/capstone_before.md` and
+`results/capstone_after.md`.
+
 **What the environment needs:**
 
 | Thing | Detail |
