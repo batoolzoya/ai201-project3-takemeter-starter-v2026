@@ -2,9 +2,9 @@
 trial_report.py - turn the last three batch runs in logs/predictions.jsonl into
 the capstone run log (five criteria x three trials).
 
-Usage (after running `python demo.py --batch trial_posts.txt` three times):
-    python trial_report.py before
-    python trial_report.py after        (after the improvement)
+Usage:
+    python trial_report.py before   # last 3 batch runs of the 10-epoch model (models/takemeter)
+    python trial_report.py after    # last 3 batch runs of the 20-epoch model (models/takemeter_e20)
 
 Writes results/capstone_<label>.md and prints it. Every number comes from the
 log records themselves (demo.py::log_record), grouped by the `session` field,
@@ -40,10 +40,16 @@ def load_records():
     return out
 
 
-def trials(records, n=3):
+def model_of(r):
+    # Records from before the --epochs option have no "model" field: that was the 10-epoch model.
+    return r.get("model") or "models/takemeter"
+
+
+def trials(records, model, n=3):
     sessions = []
     for r in records:
-        if r.get("event") == "predict" and r.get("mode") == "batch" and r["session"] not in sessions:
+        if (r.get("event") == "predict" and r.get("mode") == "batch"
+                and model_of(r).replace("\\", "/") == model and r["session"] not in sessions):
             sessions.append(r["session"])
     picked = sessions[-n:]
     return [(s, [r for r in records if r.get("session") == s]) for s in picked]
@@ -82,12 +88,16 @@ def short(r):
 
 def main():
     label = sys.argv[1] if len(sys.argv) > 1 else "before"
+    # "before" = the 10-epoch model; "after" = the 20-epoch model from the improvement.
+    model = "models/takemeter_e20" if label == "after" else "models/takemeter"
     if not LOG.exists():
         sys.exit("No logs/predictions.jsonl yet. Run demo.py --batch trial_posts.txt first.")
-    runs = trials(load_records())
+    runs = trials(load_records(), model)
     if len(runs) < 3:
-        sys.exit(f"Only {len(runs)} batch run(s) in the log. Run "
-                 f"`python demo.py --batch trial_posts.txt` until there are 3.")
+        cmd = "python demo.py --epochs 20 --batch trial_posts.txt" if label == "after" \
+            else "python demo.py --batch trial_posts.txt"
+        sys.exit(f"Only {len(runs)} batch run(s) with {model} in the log. Run `{cmd}` "
+                 f"until there are 3.")
     m = [measure(recs) for _, recs in runs]
 
     rows = [
@@ -104,6 +114,7 @@ def main():
     ]
 
     out = [f"# Capstone run log: {label}", "",
+           f"Model: {model}", "",
            "Sessions (one per trial): " + ", ".join(s for s, _ in runs), "",
            "| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |",
            "|---|---|---|---|---|---|"]
