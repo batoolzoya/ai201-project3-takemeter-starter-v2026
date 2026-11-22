@@ -431,3 +431,110 @@ Out of scope, on purpose:
 **Running It**
 
 Path B, local with logs. The start command, the environment it needs (Python 3.11–3.13, pinned packages, the ~268 MB base model and the ~268 MB trained model) and how to read the log back are in [RUNNING.md](RUNNING.md), section 3 of the Quick start.
+
+**Instrumentation**
+
+Every time `demo.py` loads the model or classifies a post, `demo.py::log_record` appends one JSON record to `logs/predictions.jsonl`. Rejected and failed runs are logged too: a bad input gets `status: "rejected"` with the reason, and any exception during classification gets `status: "error"` with the error type and message. Each record holds:
+
+| Field | What it is |
+|---|---|
+| `ts` | UTC timestamp, to the millisecond |
+| `session` | One id per run of the script, so each trial can be told apart |
+| `event` | `load` (model loaded) or `predict` (one post) |
+| `mode` | `batch`, `examples` or `interactive` |
+| `model` | Which saved model answered (`models/takemeter` = 10 epochs) |
+| `input`, `input_chars` | The post (first 300 characters) and its full length |
+| `input_tokens`, `truncated` | How many tokens it is, and whether it went over the 128 the model reads |
+| `status` | `ok`, `rejected` or `error` |
+| `label`, `confidence`, `scores` | The prediction, its probability, and all four label probabilities |
+| `expected` | My own label for the post (batch mode), so matches can be counted later |
+| `duration_ms` | How long that one classification took, end to end |
+| `error` | Why it was rejected or failed (`null` when it worked) |
+
+Fifteen records from my first instrumented run (`python demo.py --log 16`), including the model load and the two rejected inputs:
+
+```
+2026-11-21T23:50:47.381+00:00  load          312 ms  model loaded
+2026-11-21T23:50:48.002+00:00  ok            605 ms  trip_report   40%  'Just got back from Lisbon. Honestly the trams'
+2026-11-21T23:50:48.064+00:00  ok             60 ms  advice        43%  'Spent 3 weeks in Vietnam last spring. If you '
+2026-11-21T23:50:48.131+00:00  ok             65 ms  question      36%  'Why does every airline now charge for seat se'
+2026-11-21T23:50:48.193+00:00  ok             60 ms  question      40%  "I'm in Rome right now and it's my first time "
+2026-11-21T23:50:48.239+00:00  ok             46 ms  question      37%  'Have you tried booking directly with the hote'
+2026-11-21T23:50:48.296+00:00  ok             54 ms  question      29%  'Hostels in Amsterdam are getting ridiculous. '
+2026-11-21T23:50:48.341+00:00  ok             52 ms  trip_report   34%  'Day 4 in Japan. Kyoto was beautiful but I und'
+2026-11-21T23:50:48.402+00:00  ok             51 ms  question      27%  'Took the night train from Vienna to Venice. W'
+2026-11-21T23:50:48.459+00:00  ok             54 ms  advice        52%  "If you're flying into Lisbon, skip the taxi l"
+2026-11-21T23:50:48.521+00:00  ok             62 ms  question      34%  "Third time this year my checked bag didn't ma"
+2026-11-21T23:50:48.585+00:00  ok             60 ms  trip_report   40%  'Just got back from 5 days in Hanoi. Spent mos'
+2026-11-21T23:50:48.698+00:00  ok            113 ms  trip_report   41%  'Two weeks in Peru, finally home and still pro'
+2026-11-21T23:50:48.700+00:00  rejected        0 ms  -               -  ''
+2026-11-21T23:50:48.702+00:00  rejected        0 ms  -               -  '   \t  '
+```
+
+The full JSON for a run, one record per line, is under the run log below. The whole log is committed in `logs/predictions.jsonl`. I tested the failure path with an empty post and a whitespace-only post: both were rejected and logged. No run raised an error, so there's no `status: "error"` record yet.
+
+**What It Costs**
+
+TakeMeter makes no API calls, so the cost is **compute time on my laptop CPU** (Windows, CPU only, torch 2.15.0+cpu).
+
+- **Measured cost per run (one post classified): 62.6 ms of CPU time.** That's the mean `duration_ms` over all 36 classifications in my three trials (12 real posts × 3 runs: 63.1, 61.6 and 63.2 ms per trial), read from the log records, not estimated.
+- **Plus a one-time model load per session: about 146 ms** (142–149 ms in the three trials; 312 ms the first time the files were read from disk).
+- **API spend: $0. Tokens: none billed.** The model runs locally.
+
+**For a hundred people a day**, if each person classifies 10 posts in one session:
+100 sessions × 146 ms = 14.6 s of loading, plus 100 × 10 posts × 62.6 ms = 62.6 s of classifying, so **about 77 seconds of CPU per day**, and still $0 in API cost. On a hosted server the real cost would be keeping ~270 MB of model in memory all day, not the seconds of compute.
+
+**Run Log and Verdicts**
+
+The target has to hold in all three trials. Run with `python demo.py --batch trial_posts.txt` three times, with nothing changed in between, then `python trial_report.py before` (it reads the three sessions back from the log). The full output, with every record from Run 1, is in `results/capstone_before.md`.
+
+| Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
+|---|---|---|---|---|---|
+| 1. Every post leaves a complete log record | 14 of 14 | 14/14 | 14/14 | 14/14 | MET |
+| 2. Bad inputs rejected and logged | 2 of 2 | 2/2 | 2/2 | 2/2 | MET |
+| 3. Real posts classified under 66 ms (incl. first) | 10 of 12 | 10/12 | 10/12 | 10/12 | MET |
+| 4. Mean ms per classified post (cost) | < 110 ms | 63.1 ms | 61.6 ms | 63.2 ms | MET |
+| 5. Real posts matching my label | ≥ 8 of 12 | 7/12 | 7/12 | 7/12 | MISSED |
+
+Per-post timings (ms), in file order:
+- Run 1: model load 146 ms; posts: 140, 52, 54, 51, 43, 52, 49, 47, 51, 57, 57, 104
+- Run 2: model load 149 ms; posts: 139, 50, 54, 51, 40, 48, 47, 45, 48, 56, 56, 105
+- Run 3: model load 142 ms; posts: 147, 56, 58, 55, 41, 48, 48, 46, 50, 52, 52, 104
+
+Real output for each criterion, from Run 1 (`logs/predictions.jsonl`, written by `demo.py::log_record` via `demo.py::classify`):
+
+Criterion 2, the two bad inputs:
+```
+{"ts": "2026-11-22T00:20:28.775+00:00", "status": "rejected", "label": null, "confidence": null, "expected": "rejected", "duration_ms": 0.01, "input_tokens": null, "truncated": null, "error": "empty or whitespace-only post", "input": ""}
+{"ts": "2026-11-22T00:20:28.775+00:00", "status": "rejected", "label": null, "confidence": null, "expected": "rejected", "duration_ms": 0.01, "input_tokens": null, "truncated": null, "error": "empty or whitespace-only post", "input": "   \t  "}
+```
+
+Criteria 3 and 4, the two slow posts and the fastest:
+```
+{"ts": "2026-11-22T00:20:28.135+00:00", "status": "ok", "label": "trip_report", "confidence": 0.3984, "expected": "trip_report", "duration_ms": 140.3, "input_tokens": 46, "truncated": false, "error": null, "input": "Just got back from Lisbon. Honestly the trams were a nightma"}
+{"ts": "2026-11-22T00:20:28.773+00:00", "status": "ok", "label": "trip_report", "confidence": 0.4082, "expected": "trip_report", "duration_ms": 104.1, "input_tokens": 290, "truncated": true, "error": null, "input": "Two weeks in Peru, finally home and still processing it. We "}
+{"ts": "2026-11-22T00:20:28.344+00:00", "status": "ok", "label": "question", "confidence": 0.3658, "expected": "advice", "duration_ms": 43.4, "input_tokens": 26, "truncated": false, "error": null, "input": "Have you tried booking directly with the hotel instead? I di"}
+```
+
+Criterion 5, the five posts that didn't match my label:
+```
+{"ts": "2026-11-22T00:20:28.245+00:00", "status": "ok", "label": "question", "confidence": 0.3644, "expected": "rant", "duration_ms": 54.1, "input_tokens": 48, "truncated": false, "error": null, "input": "Why does every airline now charge for seat selection?? I pai"}
+{"ts": "2026-11-22T00:20:28.344+00:00", "status": "ok", "label": "question", "confidence": 0.3658, "expected": "advice", "duration_ms": 43.4, "input_tokens": 26, "truncated": false, "error": null, "input": "Have you tried booking directly with the hotel instead? I di"}
+{"ts": "2026-11-22T00:20:28.398+00:00", "status": "ok", "label": "question", "confidence": 0.2924, "expected": "rant", "duration_ms": 51.6, "input_tokens": 39, "truncated": false, "error": null, "input": "Hostels in Amsterdam are getting ridiculous. EUR 70 for a bu"}
+{"ts": "2026-11-22T00:20:28.497+00:00", "status": "ok", "label": "question", "confidence": 0.2715, "expected": "trip_report", "duration_ms": 46.7, "input_tokens": 34, "truncated": false, "error": null, "input": "Took the night train from Vienna to Venice. Would I do it ag"}
+{"ts": "2026-11-22T00:20:28.608+00:00", "status": "ok", "label": "question", "confidence": 0.3363, "expected": "rant", "duration_ms": 56.8, "input_tokens": 51, "truncated": false, "error": null, "input": "Third time this year my checked bag didn't make the connecti"}
+```
+
+Verdicts and diagnoses:
+
+- **1, MET.** All 14 records were complete in every run, including the two rejections.
+- **2, MET.** Both bad inputs were rejected with a message and logged in every run, without reaching the model (0.01 ms).
+- **3, MET, but only just.** Exactly 10 of 12 every time, and the same two posts were slow in all three runs. **The first post after loading (139–147 ms):** this is a warm-up cost in the model stage. The first call through the model is slower than the rest, even though the Lisbon post is a normal 46 tokens. **The long Peru post (104–105 ms):** it is 290 tokens, so the model reads the full 128-token window instead of the usual ~40–50 tokens, and the model's work grows with the number of tokens it reads. One more slow post would turn this into a miss.
+- **4, MET.** 62–63 ms mean per post, well under 110.
+- **5, MISSED (7/12 in every run).** **Stage:** the classifier itself, the fine-tuned DistilBERT whose highest-scoring label `demo.py::classify` returns. **Mechanism:** all 5 misses were predicted `question`, and with low confidence (27–37%). Across all 12 posts the top confidence was only 27–52%, close to the flat 25% of a pure guess. So the model hasn't separated the four labels well, and when the scores are close, `question` comes out on top, especially when the post contains a question mark or a question (4 of the 5 misses do: "??", "Have you tried…?", "Would I do it again?", "Why do we even pay…?"). All three rants in the trial set went to `question`, the same pattern as my unit 6 confusion matrix. The result was identical in all three runs because prediction has no randomness, so this is a property of the trained model, not bad luck in one run. The underlying cause is that the model is still undertrained: in unit 6 its validation loss was still falling at epoch 10 (1.02), and training loss had only reached 0.86.
+
+**The Improvement**
+
+**What I changed:** I trained the model for **20 epochs instead of 10**, with nothing else changed: same 151 labels, same seed (42), same learning rate and batch size, same trial file, same code path. It's run as `python demo.py --epochs 20 --batch trial_posts.txt`, which trains once into `models/takemeter_e20/` and leaves the 10-epoch model untouched.
+
+**Why:** the diagnosis for criterion 5 names the model stage. Its confidences are nearly flat (27–52%), and unit 6 showed it was still improving when training stopped at 10 epochs. More training is the one change aimed at that mechanism. It doesn't change the model's size, so it shouldn't change the timing criteria (3 and 4). This crosses one of my out-of-scope lines ("no retraining beyond the 10-epoch setup"). I'm doing it on purpose, because the diagnosis pointed at the model and not at the operational layer.
