@@ -6,6 +6,8 @@ Usage (repo folder, venv active):
     python demo.py --examples               # the 8 stress-test posts from notes.md
     python demo.py --batch trial_posts.txt  # a file of posts (one per line) -> summary
     python demo.py --log                    # show the last 10 log records
+    python demo.py --epochs 20 --batch trial_posts.txt
+                                            # capstone improvement: a model trained for 20 epochs
 
 Every classification - answered, rejected or failed - appends one JSON record
 to logs/predictions.jsonl (timestamp, input, output, duration and more). So
@@ -28,7 +30,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 LABELS = ["question", "advice", "trip_report", "rant"]
-EPOCHS = 10          # the improved setting from unit 6 (was 3)
+EPOCHS = 10          # the improved setting from unit 6 (was 3); --epochs N overrides
 MAX_TOKENS = 128     # the model reads this many tokens; anything longer is cut off
 MODEL_DIR = Path("models/takemeter")
 LOG_PATH = Path("logs/predictions.jsonl")
@@ -107,7 +109,7 @@ def train_and_save():
     nb = json.loads(Path("takemeter.ipynb").read_text(encoding="utf-8"))
     ns = {"__name__": "__main__"}
     print(f"No saved model yet - training once ({EPOCHS} epochs, seed 42). "
-          f"About 4 minutes on CPU...\n")
+          f"About {max(4, round(EPOCHS * 0.4))} minutes on CPU...\n")
     for cell in nb["cells"]:
         src = "".join(cell["source"]) if isinstance(cell["source"], list) else cell["source"]
         if cell["cell_type"] == "markdown" and src.lstrip().startswith("## 5."):
@@ -138,7 +140,7 @@ def load():
 def classify(clf, text, mode, expected=None):
     """Classify one post and log it. Returns the log record."""
     start = time.perf_counter()
-    base = {"event": "predict", "mode": mode, "input": text[:300],
+    base = {"event": "predict", "mode": mode, "model": str(MODEL_DIR), "input": text[:300],
             "input_chars": len(text), "expected": expected}
 
     if not text.strip():
@@ -254,6 +256,12 @@ def run_batch(clf, path, load_ms):
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 def main():
+    global EPOCHS, MODEL_DIR
+    if "--epochs" in sys.argv:
+        EPOCHS = int(sys.argv[sys.argv.index("--epochs") + 1])
+    if EPOCHS != 10:
+        MODEL_DIR = Path(f"models/takemeter_e{EPOCHS}")   # keeps the 10-epoch model as it is
+
     if "--log" in sys.argv:
         n = 10
         if len(sys.argv) > sys.argv.index("--log") + 1:
