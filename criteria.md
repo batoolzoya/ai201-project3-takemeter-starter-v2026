@@ -121,3 +121,22 @@ In labels.csv, no label is more than 50% of the rows and no label is less than 1
      A number you missed stays where it is, gets diagnosed, and gets a fix
      attempted. That's where the points are.
      ───────────────────────────────────────────────────────────────────────── -->
+
+---
+
+# Capstone criteria (written before any capstone trial results)
+
+1. In each trial, 14 of the 14 posts in trial_posts.txt leave a record in logs/predictions.jsonl with a status, a duration_ms, and either a label or an error.
+   Why: This is plain code and if incorrect, the reason is a bug. So, we would like this to be perfect.
+
+2. In each trial, 2 of the 2 bad inputs (empty post, whitespace-only post) are rejected with a message and logged with status "rejected", instead of being classified or crashing.
+   Why: We want the system to be capable of clearly recognizing bad inputs rather than guess a label for nothing.
+
+3. In each trial, 10 of the 12 real posts are classified in under 66 ms each (counting every post, including the first one after the model loads).
+   Why: This is the target we achieved in the demo and expect to be minimum moving forward since we want an efficient system.
+
+4. In each trial, the mean time per classified post (my cost per run, in CPU time) is under 110 ms.
+   Why: My first run's mean was 107 ms so I kept a little wiggle room but want to stay close to it.
+
+5. In each trial, at least 8 of the 12 real posts get the same label I gave them.
+   Why: Rant is tricky as it is often short and can easily resemble any of the other labels. It is also my thinnest label. Additionally, the system seems to incline towards question as many posts/comments from other labels contain questions. We achieved 7/12 in the first run and expect higher than that for the trials. Also, a trained model should at least give higher than a 50% match, even with four categories.
